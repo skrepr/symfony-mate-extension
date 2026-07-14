@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Skrepr\PerformanceMate;
 
 /**
- * Pure aggregatielogica over query-lijsten uit profielen: shape-groepering,
- * N+1-detectie en voor/na-diffs. Bewust vrij van IO zodat dit direct testbaar
- * is; de tools mappen de uitkomst alleen nog naar JSON-output.
+ * Pure aggregation logic over query lists from profiles: shape grouping,
+ * N+1 detection and before/after diffs. Deliberately free of IO so this is
+ * directly testable; the tools only map the outcome to JSON output.
  *
  * @phpstan-import-type Frame from Sql
  * @phpstan-import-type Query from ProfileReader
@@ -19,15 +19,15 @@ namespace Skrepr\PerformanceMate;
  */
 final class QueryShapes
 {
-    /** Maximale lengte van een sql_shape in tool-output; langer krijgt een sql_shape_truncated-signaal. */
+    /** Maximum length of an sql_shape in tool output; anything longer gets an sql_shape_truncated signal. */
     public const MAX_SHAPE_CHARS = 400;
 
-    /** Maximale lengte van sample_sql in tool-output; langer krijgt een sample_sql_truncated-signaal. */
+    /** Maximum length of sample_sql in tool output; anything longer gets a sample_sql_truncated signal. */
     public const MAX_SAMPLE_SQL_CHARS = 400;
 
     /**
-     * Telt de queries van één request bij in de shape-groepen (voor slow_queries).
-     * De origin-frames van de eerste query mét backtrace winnen per groep.
+     * Adds one request's queries to the shape groups (for slow_queries).
+     * The origin frames of the first query with a backtrace win per group.
      *
      * @param array<string, ShapeGroup> $groups
      * @param list<Query>               $queries
@@ -60,8 +60,8 @@ final class QueryShapes
     }
 
     /**
-     * Traagste shapes eerst (op totale tijd), gemaximeerd op $top, met afgeleide
-     * avg_ms en seen_on afgekapt op 5 endpoints.
+     * Slowest shapes first (by total time), capped at $top, with derived
+     * avg_ms and seen_on capped at 5 endpoints.
      *
      * @param array<string, ShapeGroup> $groups
      *
@@ -89,9 +89,9 @@ final class QueryShapes
     }
 
     /**
-     * Groepeert op (shape + origin): een echte N+1 is dezelfde query die vanuit
-     * één regel in een lus herhaald wordt. Zonder backtrace is de origin leeg en
-     * valt dit terug op groeperen op shape alleen.
+     * Groups by (shape + origin): a real N+1 is the same query repeated from a
+     * single line in a loop. Without a backtrace the origin is empty and this
+     * falls back to grouping by shape alone.
      *
      * @param list<Query> $queries
      *
@@ -119,9 +119,9 @@ final class QueryShapes
     }
 
     /**
-     * Verdachten (>= $threshold herhalingen), meest herhaald eerst, met de
-     * vermoedelijke parent: de query direct vóór de eerste herhaling is vaak
-     * degene waarvan het resultaat wordt geïtereerd — de klassieke 1+N-signatuur.
+     * Suspects (>= $threshold repetitions), most repeated first, with the
+     * likely parent: the query directly before the first repetition is often
+     * the one whose result is being iterated — the classic 1+N signature.
      *
      * @param array<string, OriginGroup> $groups
      * @param list<Query>                $queries
@@ -165,9 +165,9 @@ final class QueryShapes
     }
 
     /**
-     * Shape afkappen op MAX_SHAPE_CHARS, mét truncatie-signaal (conform de
-     * Mate-designprincipes): de agent moet weten dat hij over een sample
-     * redeneert, niet over de volledige query.
+     * Truncate a shape to MAX_SHAPE_CHARS, with a truncation signal (per the
+     * Mate design principles): the agent must know it is reasoning about a
+     * sample, not the full query.
      *
      * @return array{sql_shape: string, sql_shape_truncated?: true}
      */
@@ -183,7 +183,7 @@ final class QueryShapes
     /**
      * @param list<Query> $queries
      *
-     * @return array<string, int> shape => aantal uitvoeringen
+     * @return array<string, int> shape => number of executions
      */
     public static function countByShape(array $queries): array
     {
@@ -197,8 +197,8 @@ final class QueryShapes
     }
 
     /**
-     * Welke query-shapes zijn verdwenen, bijgekomen of in aantal veranderd
-     * tussen twee requests (voor profile_diff).
+     * Which query shapes disappeared, appeared or changed in count between
+     * two requests (for profile_diff).
      *
      * @param array<string, int> $before
      * @param array<string, int> $after

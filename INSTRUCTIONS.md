@@ -1,6 +1,6 @@
 # Runtime profiler tools (Skrepr)
 
-These tools read the **Symfony profiler** of the local dev app to analyse *what actually happened* at runtime — request timing, Doctrine queries, N+1 patterns — and to run `EXPLAIN` against the database. Dev-only.
+These tools read the **Symfony profiler** of the local dev app to analyze *what actually happened* at runtime — request timing, Doctrine queries, N+1 patterns — and to run `EXPLAIN` against the database. Dev-only.
 
 Typical performance workflow:
 

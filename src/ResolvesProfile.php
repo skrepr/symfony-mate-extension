@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Skrepr\PerformanceMate;
 
 /**
- * Gedeelde token-resolutie voor tools die één profiel lezen: leeg token =
- * recentste request (optioneel via URL-filter), met alle foutpaden als
- * kant-en-klare JSON-foutmelding voor de agent.
+ * Shared token resolution for tools that read a single profile: empty token =
+ * most recent request (optionally via URL filter), with every failure path
+ * returned as a ready-made JSON error message for the agent.
  *
- * Verwacht dat de gebruikende klasse een `private readonly ProfileReader $reader`
- * heeft (alle tools krijgen die via constructor promotion).
+ * Expects the using class to have a `private readonly ProfileReader $reader`
+ * (all tools get one via constructor promotion).
  *
  * @phpstan-import-type StructuredProfile from ProfileReader
  */
@@ -19,7 +19,7 @@ trait ResolvesProfile
     use JsonResponse;
 
     /**
-     * @return StructuredProfile|string het profiel, of een JSON-foutmelding wanneer het niet gelezen kon worden
+     * @return StructuredProfile|string the profile, or a JSON error message when it could not be read
      */
     private function resolveProfile(?string $token, ?string $urlFilter): array|string
     {
@@ -27,7 +27,7 @@ trait ResolvesProfile
             $token = $this->reader->latestToken($urlFilter ?? '');
         }
         if (null === $token) {
-            return $this->json(['error' => 'Geen requests gevonden — doe eerst een request naar de app.']);
+            return $this->json(['error' => 'No requests found — make a request to the app first.']);
         }
         try {
             $profile = $this->reader->read($token);
@@ -35,7 +35,7 @@ trait ResolvesProfile
             return $this->json(['error' => $e->getMessage()]);
         }
         if (null === $profile) {
-            return $this->json(['error' => "Geen profiel gevonden voor token {$token}."]);
+            return $this->json(['error' => "No profile found for token {$token}."]);
         }
 
         return $profile;

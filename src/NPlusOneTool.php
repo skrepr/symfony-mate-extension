@@ -16,14 +16,14 @@ final class NPlusOneTool
     }
 
     /**
-     * @param string|null $token     Profiler-token; leeg = recentste (evt. via urlFilter)
-     * @param string|null $urlFilter Substring-filter op de URL om het recentste passende request te pakken
-     * @param int         $threshold Minimaal aantal herhalingen om te rapporteren
+     * @param string|null $token     Profiler token; empty = most recent (optionally via urlFilter)
+     * @param string|null $urlFilter Substring filter on the URL to pick the most recent matching request
+     * @param int         $threshold Minimum number of repetitions to report
      */
     #[McpTool(
         name: 'detect_n_plus_one',
         title: 'Detect N+1',
-        description: 'Detecteert N+1-patronen binnen één request: identieke query-shapes die herhaald worden uitgevoerd, met de veroorzakende regel code en de vermoedelijke parent-query (1+N). Geef een token, of een urlFilter om het recentste passende request te pakken. Let op: sample_sql bevat de werkelijke parameterwaarden uit de request (handig als input voor explain_query, maar potentieel gevoelig).',
+        description: 'Detects N+1 patterns within a single request: identical query shapes executed repeatedly, with the originating line of code and the likely parent query (1+N). Provide a token, or a urlFilter to pick the most recent matching request. Note: sample_sql contains the actual parameter values from the request (useful as input for explain_query, but potentially sensitive).',
     )]
     public function detectNPlusOne(?string $token = null, ?string $urlFilter = null, int $threshold = 5): string
     {
@@ -45,7 +45,7 @@ final class NPlusOneTool
                 ...(($s['sample_sql_truncated'] ?? false) ? ['sample_sql_truncated' => true] : []),
                 ...Sql::originFields($s['originFrame'], $s['chain']),
                 'likely_parent' => $s['likely_parent'],
-                'hint' => 'Overweeg een JOIN/fetch-join, batch-loading of fetch: EAGER voor deze relatie.',
+                'hint' => 'Consider a JOIN/fetch join, batch loading or fetch: EAGER for this relation.',
             ];
         }
 

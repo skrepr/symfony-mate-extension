@@ -1,18 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-07-14
 
-- Truncatie-signaal nu overal consequent: `profile_diff` en `detect_n_plus_one` melden voortaan `sql_shape_truncated`/`sample_sql_truncated` bij afgekapte SQL; de shape-limiet is geüniformeerd op 400 tekens (was 300 in `profile_diff` en `likely_parent`)
-- Eén consistente fallback-melding voor `origin` wanneer backtraces ontbreken (verwijst naar `doctrine.dbal.profiling_collect_backtrace`)
-- `profile_diff` meldt bij een onleesbaar profiel nu wélk token het betreft
+- All project text (comments, tool descriptions, error messages, docs) translated to English
+- Truncation signal now consistent everywhere: `profile_diff` and `detect_n_plus_one` report `sql_shape_truncated`/`sample_sql_truncated` for truncated SQL; the shape limit is unified at 400 characters (was 300 in `profile_diff` and `likely_parent`)
+- One consistent fallback message for `origin` when backtraces are missing (points to `doctrine.dbal.profiling_collect_backtrace`)
+- `profile_diff` now names the token when a profile cannot be read
 
 ## 0.1.0 — 2026-07-14
 
-Eerste release.
+First release.
 
-- Vijf MCP-tools voor AI Mate: `slow_queries`, `detect_n_plus_one`, `request_breakdown`, `profile_diff` en `explain_query`
-- OOM-bescherming: te grote profielen worden overgeslagen (`skrepr_mate.max_profile_bytes`), met fail-closed detectie als Symfony's profiler-padschema ooit wijzigt
-- In-process cache van gedistilleerde profielen (de MCP-server is langlevend)
-- `explain_query` weigert multi-statements en draait `EXPLAIN ANALYZE` alleen voor `SELECT`/`WITH`
-- Tool-output volgt de Mate-designprincipes: genormaliseerde query-shapes, harde limieten met truncatie-signaal
-- Configuratie via `skrepr_mate.profiler_dir`, `skrepr_mate.database_url` en `skrepr_mate.max_profile_bytes`
+- Five MCP tools for AI Mate: `slow_queries`, `detect_n_plus_one`, `request_breakdown`, `profile_diff` and `explain_query`
+- OOM protection: oversized profiles are skipped (`skrepr_mate.max_profile_bytes`), with fail-closed detection if Symfony's profiler path scheme ever changes
+- In-process cache of distilled profiles (the MCP server is long-lived)
+- `explain_query` refuses multi-statements and runs `EXPLAIN ANALYZE` only for `SELECT`/`WITH`
+- Tool output follows the Mate design principles: normalized query shapes, hard limits with a truncation signal
+- Configuration via `skrepr_mate.profiler_dir`, `skrepr_mate.database_url` and `skrepr_mate.max_profile_bytes`

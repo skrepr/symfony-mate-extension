@@ -31,29 +31,29 @@ final class JsonResponseTest extends TestCase
 
     public function testEncodesCleanDataWithoutWarning(): void
     {
-        $json = $this->encode(['a' => 1, 'b' => 'twee']);
+        $json = $this->encode(['a' => 1, 'b' => 'two']);
         $decoded = json_decode($json, true);
 
-        self::assertSame(['a' => 1, 'b' => 'twee'], $decoded);
+        self::assertSame(['a' => 1, 'b' => 'two'], $decoded);
     }
 
     public function testSubstitutesInvalidUtf8(): void
     {
-        $json = $this->encode(['naam' => "geldig \xB1\x31 deels"]);
+        $json = $this->encode(['name' => "valid \xB1\x31 partly"]);
         $decoded = json_decode($json, true);
 
         self::assertIsArray($decoded);
-        self::assertIsString($decoded['naam']);
+        self::assertIsString($decoded['name']);
     }
 
     public function testAddsEncodingWarningWhenDataDegrades(): void
     {
-        $json = $this->encode(['waarde' => \INF]);
+        $json = $this->encode(['value' => \INF]);
         $decoded = json_decode($json, true);
 
         self::assertIsArray($decoded);
         self::assertArrayHasKey('_encoding_warning', $decoded);
-        self::assertSame(0, $decoded['waarde']);
+        self::assertSame(0, $decoded['value']);
     }
 
     public function testNoWarningKeyForCleanData(): void

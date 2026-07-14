@@ -14,13 +14,13 @@ trait JsonResponse
         $flags = \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_PARTIAL_OUTPUT_ON_ERROR;
         $json = json_encode($data, $flags);
 
-        // JSON_PARTIAL_OUTPUT_ON_ERROR laat encoding stilletjes degraderen
-        // (waardes vervangen of weggelaten); maak dat zichtbaar voor de agent.
+        // JSON_PARTIAL_OUTPUT_ON_ERROR lets encoding degrade silently (values
+        // replaced or dropped); make that visible to the agent.
         if (\JSON_ERROR_NONE !== json_last_error()) {
-            $data['_encoding_warning'] = 'Een deel van de data kon niet als JSON gecodeerd worden en is vervangen of weggelaten ('.json_last_error_msg().').';
+            $data['_encoding_warning'] = 'Part of the data could not be encoded as JSON and has been replaced or dropped ('.json_last_error_msg().').';
             $json = json_encode($data, $flags);
         }
 
-        return false !== $json ? $json : '{"_encoding_warning": "json_encode faalde volledig"}';
+        return false !== $json ? $json : '{"_encoding_warning": "json_encode failed entirely"}';
     }
 }

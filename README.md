@@ -1,60 +1,60 @@
 # skrepr/ai-performance-mate-extension
 
-Een [AI Mate](https://symfony.com/doc/current/ai/components/mate.html)-extensie die **runtime-data uit de Symfony profiler** beschikbaar maakt voor AI-agents (Claude Code, Cursor, …). Waar code-intelligence kijkt naar wat er op disk staat, kijkt deze naar wat er *daadwerkelijk gebeurt*: request-timing, Doctrine-queries, N+1-patronen en query-plannen.
+An [AI Mate](https://symfony.com/doc/current/ai/components/mate.html) extension that exposes **runtime data from the Symfony profiler** to AI agents (Claude Code, Cursor, …). Where code intelligence looks at what sits on disk, this looks at what *actually happens*: request timing, Doctrine queries, N+1 patterns and query plans.
 
-Dit is de opvolger van de losse Node-MCP-server `symfony-runtime-mcp`: dezelfde analyse-tools, maar nu in-process als Mate-extensie. Daardoor vervallen `docker exec`, een gekopieerd extractor-script en host↔container-padmapping — de tools draaien waar de code en de database leven.
+This is the successor to the standalone Node MCP server `symfony-runtime-mcp`: the same analysis tools, but now in-process as a Mate extension. That eliminates `docker exec`, a copied extractor script and host↔container path mapping — the tools run where the code and the database live.
 
-> **Alleen voor lokale dev-omgevingen.** Richt dit nooit op productie.
+> **For local dev environments only.** Never point this at production.
 
 ## Tools
 
-| Tool | Doet |
+| Tool | What it does |
 |---|---|
-| `slow_queries` | Traagste query-shapes over de laatste N requests, met totale tijd, aantal uitvoeringen en herkomst (bestand:regel + broncode) |
-| `detect_n_plus_one` | Herhaalde identieke queries binnen één request, met de vermoedelijke parent-query (1+N) |
-| `request_breakdown` | Wall-clock van één request opgesplitst per categorie (DB / externe HTTP / rendering / listeners …) |
-| `profile_diff` | Voor/na-vergelijking van hetzelfde endpoint: duur, geheugen, query-count en verdwenen/bijgekomen query-shapes |
-| `explain_query` | Draait `EXPLAIN` en zegt *waarom* een query traag is (full scan, ongebruikte index, filesort). `analyze=true` alleen voor `SELECT`/`WITH` |
+| `slow_queries` | Slowest query shapes over the last N requests, with total time, execution count and origin (file:line + source code) |
+| `detect_n_plus_one` | Repeated identical queries within a single request, with the likely parent query (1+N) |
+| `request_breakdown` | Wall clock of a single request broken down per category (DB / external HTTP / rendering / listeners …) |
+| `profile_diff` | Before/after comparison of the same endpoint: duration, memory, query count and disappeared/appeared query shapes |
+| `explain_query` | Runs `EXPLAIN` and tells you *why* a query is slow (full scan, unused index, filesort). `analyze=true` for `SELECT`/`WITH` only |
 
-Complementair aan de officiële `symfony/ai-symfony-mate-extension` (die ruwe profiler- en container-data ontsluit): installeer beide naast elkaar.
+Complementary to the official `symfony/ai-symfony-mate-extension` (which exposes raw profiler and container data): install both side by side.
 
-## Installatie
+## Installation
 
 ```bash
 composer require --dev skrepr/ai-performance-mate-extension
 ```
 
-**Draait AI Mate al in je project** (er bestaat een `mate/`-map)? Dan ben je klaar: de Mate-composer-plugin draait `mate discover` automatisch na elke `composer require`/`update`.
+**Already running AI Mate in your project** (a `mate/` directory exists)? Then you are done: the Mate composer plugin runs `mate discover` automatically after every `composer require`/`update`.
 
-**Nog geen AI Mate?** Het pakket trekt `symfony/ai-mate` automatisch mee; initialiseer het eenmalig:
+**No AI Mate yet?** The package pulls in `symfony/ai-mate` automatically; initialize it once:
 
 ```bash
-vendor/bin/mate init          # maakt mate/ + mcp.json (Claude Code e.d. pikken die vanzelf op)
-vendor/bin/mate discover      # registreert de extensie; daarna gebeurt dit automatisch
+vendor/bin/mate init          # creates mate/ + mcp.json (Claude Code and friends pick those up automatically)
+vendor/bin/mate discover      # registers the extension; happens automatically from then on
 ```
 
-De vier profiler-tools werken meteen: ze lezen `var/cache/dev/profiler`. Doe een paar requests naar je app en roep bijvoorbeeld `request_breakdown` aan. Check met `vendor/bin/mate mcp:tools:list` of de tools geregistreerd zijn.
+The four profiler tools work right away: they read `var/cache/dev/profiler`. Make a few requests to your app and call `request_breakdown`, for example. Check with `vendor/bin/mate mcp:tools:list` that the tools are registered.
 
-## Configuratie
+## Configuration
 
-Alle config is optioneel en gaat via `mate/config.php` in je project.
+All configuration is optional and goes through `mate/config.php` in your project.
 
-### `explain_query` — databaseverbinding
+### `explain_query` — database connection
 
-De extensie kent je app-connectie niet (Mate boot de kernel niet), dus `explain_query` bouwt zelf een verbinding uit een DSN. Standaard valt hij terug op `DATABASE_URL` uit de omgeving; laad die door `mate.env_file` te zetten:
+The extension does not know your app connection (Mate does not boot the kernel), so `explain_query` builds its own connection from a DSN. By default it falls back to `DATABASE_URL` from the environment; load that by setting `mate.env_file`:
 
 ```php
 // mate/config.php
 return static function (ContainerConfigurator $container): void {
     $container->parameters()
-        ->set('mate.env_file', '.env')   // laadt .env én .env.local
+        ->set('mate.env_file', '.env')   // loads .env and .env.local
     ;
 };
 ```
 
-`mate.env_file` verwacht een **string** (géén array) en vereist `symfony/dotenv` in je project — in een standaard Symfony-app al aanwezig.
+`mate.env_file` expects a **string** (not an array) and requires `symfony/dotenv` in your project — already present in a standard Symfony app.
 
-Gebruik je een andere env-var of meerdere connecties, wijs de DSN dan expliciet aan:
+Using a different env var or multiple connections? Point at the DSN explicitly:
 
 ```php
 $container->parameters()
@@ -63,9 +63,9 @@ $container->parameters()
 ;
 ```
 
-### Herkomst van queries (sterk aangeraden)
+### Query origins (strongly recommended)
 
-Zonder backtraces weet `slow_queries`/`detect_n_plus_one` *dat* een query traag is, maar niet *waar* hij vandaan komt. Zet in `config/packages/dev/doctrine.yaml`:
+Without backtraces, `slow_queries`/`detect_n_plus_one` know *that* a query is slow, but not *where* it comes from. Set in `config/packages/dev/doctrine.yaml`:
 
 ```yaml
 doctrine:
@@ -73,9 +73,9 @@ doctrine:
         profiling_collect_backtrace: true
 ```
 
-Daarmee wijst `origin` naar het exacte bestand:regel in je projectcode, inclusief de broncode eromheen.
+With that, `origin` points to the exact file:line in your project code, including the surrounding source.
 
-### Afwijkende profiler-locatie
+### Custom profiler location
 
 ```php
 $container->parameters()
@@ -83,9 +83,9 @@ $container->parameters()
 ;
 ```
 
-## Bekende beperking: de Symfony-bridge op PHP < 8.4
+## Known limitation: the Symfony bridge on PHP < 8.4
 
-Gebruik je óók `symfony/ai-symfony-mate-extension`, dan falen z'n `symfony-profiler-*`-tools op **PHP < 8.4** met *"Cannot generate lazy proxy"*: de collector-formatters zijn `final` en `->lazy()`, en vóór PHP 8.4 maakt Symfony een lazy proxy via subclassing. Op PHP 8.4+ speelt dit niet. Work-around zonder de vendor te patchen — herdefinieer de formatters non-lazy in `mate/config.php`:
+If you also use `symfony/ai-symfony-mate-extension`, its `symfony-profiler-*` tools fail on **PHP < 8.4** with *"Cannot generate lazy proxy"*: the collector formatters are `final` and `->lazy()`, and before PHP 8.4 Symfony creates a lazy proxy through subclassing. On PHP 8.4+ this does not apply. Workaround without patching the vendor — redefine the formatters non-lazy in `mate/config.php`:
 
 ```php
 foreach (['Request','Exception','Mailer','Translation','Doctrine','Time','Logger','Memory'] as $name) {
@@ -97,9 +97,9 @@ foreach (['Request','Exception','Mailer','Translation','Doctrine','Time','Logger
 ## Requirements
 
 - PHP ≥ 8.2
-- Symfony 6.4 / 7.x / 8.x met de profiler aan in dev (`symfony/web-profiler-bundle`)
-- Doctrine DBAL 3.2+ / 4.x
+- Symfony 6.4 / 7.x / 8.x with the profiler enabled in dev (`symfony/web-profiler-bundle`)
+- Doctrine DBAL 3.6+ / 4.x
 
-## Licentie
+## License
 
 MIT

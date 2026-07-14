@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 /*
- * DI-configuratie van de extensie. Geladen door AI Mate (via extra.ai-mate.includes)
- * in Mate's eigen container — Mate boot de app-kernel NIET.
+ * DI configuration of the extension. Loaded by AI Mate (via extra.ai-mate.includes)
+ * into Mate's own container — Mate does NOT boot the app kernel.
  *
- * De tool-classes MOETEN public zijn: de MCP-SDK resolvet ze via
- * $container->has(FQCN), en privé services zijn daar onzichtbaar.
+ * The tool classes MUST be public: the MCP SDK resolves them via
+ * $container->has(FQCN), and private services are invisible there.
  */
 
 use Skrepr\PerformanceMate\ExplainTool;
@@ -22,16 +22,17 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container): void {
     $container->parameters()
-        // Map waar de profielen staan. Default = dezelfde locatie als de Symfony-bridge.
+        // Directory where the profiles live. Default = the same location as the Symfony bridge.
         ->set('skrepr_mate.profiler_dir', '%mate.root_dir%/var/cache/dev/profiler')
-        // DSN voor explain_query. Leeg = val terug op de DATABASE_URL uit de omgeving
-        // (zet dan mate.env_file in je app-config). Overschrijf voor een andere DB:
-        //   ->set('skrepr_mate.database_url', '%env(resolve:MIJN_DB_URL)%')
+        // DSN for explain_query. Empty = fall back to the DATABASE_URL from the
+        // environment (set mate.env_file in your app config for that). Override
+        // for a different DB:
+        //   ->set('skrepr_mate.database_url', '%env(resolve:MY_DB_URL)%')
         ->set('skrepr_mate.database_url', '')
-        // Profielen groter dan dit (bytes op schijf) worden overgeslagen i.p.v.
-        // ge-unserialized: Symfony leest een profiel in één keer in (±100x de
-        // bestandsgrootte aan RAM), dus een uitschieter — meestal een 500 met een
-        // volledige exception-dump — zou het proces met een OOM omleggen.
+        // Profiles larger than this (bytes on disk) are skipped instead of
+        // unserialized: Symfony reads a profile in one go (±100x the file size
+        // in RAM), so an outlier — usually a 500 with a full exception dump —
+        // would take the process down with an OOM.
         ->set('skrepr_mate.max_profile_bytes', ProfileReader::DEFAULT_MAX_PROFILE_BYTES)
     ;
 

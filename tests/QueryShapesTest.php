@@ -36,30 +36,31 @@ final class QueryShapesTest extends TestCase
         self::assertSame(30.0, $g['total_ms']);
         self::assertSame(3, $g['count']);
         self::assertSame(15.0, $g['max_ms']);
-        // De eerste query mét backtrace levert de origin, ook al was hij niet de eerste van de groep.
+        // The first query with a backtrace provides the origin, even though it
+        // was not the group's first.
         self::assertSame($frame, $g['originFrame']);
         self::assertSame(['GET /a' => true, 'GET /b' => true], $g['seen_on']);
-        // De sample is de eerste ruwe SQL van de groep.
+        // The sample is the group's first raw SQL.
         self::assertSame('SELECT * FROM t WHERE id = 1', $g['sample_sql']);
     }
 
     public function testRankSortsByTotalTimeAndComputesAverages(): void
     {
         $groups = QueryShapes::accumulate([], [
-            self::query('SELECT a FROM snel WHERE id = 1', 1.0),
-            self::query('SELECT b FROM traag WHERE id = 1', 50.0),
-            self::query('SELECT b FROM traag WHERE id = 2', 30.0),
+            self::query('SELECT a FROM fast WHERE id = 1', 1.0),
+            self::query('SELECT b FROM slow WHERE id = 1', 50.0),
+            self::query('SELECT b FROM slow WHERE id = 2', 30.0),
         ], 'GET /x');
 
         $ranked = QueryShapes::rank($groups, 10);
 
         self::assertCount(2, $ranked);
-        self::assertSame('SELECT b FROM traag WHERE id = ?', $ranked[0]['sql_shape']);
+        self::assertSame('SELECT b FROM slow WHERE id = ?', $ranked[0]['sql_shape']);
         self::assertSame(80.0, $ranked[0]['total_ms']);
         self::assertSame(2, $ranked[0]['executions']);
         self::assertSame(40.0, $ranked[0]['avg_ms']);
         self::assertSame(50.0, $ranked[0]['max_ms']);
-        self::assertSame('SELECT a FROM snel WHERE id = ?', $ranked[1]['sql_shape']);
+        self::assertSame('SELECT a FROM fast WHERE id = ?', $ranked[1]['sql_shape']);
     }
 
     public function testRankCapsTopAndSeenOn(): void
@@ -77,7 +78,7 @@ final class QueryShapesTest extends TestCase
         foreach (range(1, 7) as $i) {
             $manyEndpoints = QueryShapes::accumulate($manyEndpoints, [
                 self::query('SELECT x FROM t', 1.0),
-            ], "GET /pagina-{$i}");
+            ], "GET /page-{$i}");
         }
         self::assertCount(5, QueryShapes::rank($manyEndpoints, 1)[0]['seen_on']);
     }
@@ -115,7 +116,7 @@ final class QueryShapesTest extends TestCase
         self::assertCount(1, $suspects);
         self::assertSame(3, $suspects[0]['executions']);
         self::assertSame(3.0, $suspects[0]['total_ms']);
-        // De query direct vóór de eerste herhaling is de vermoedelijke parent.
+        // The query directly before the first repetition is the likely parent.
         self::assertNotNull($suspects[0]['likely_parent']);
         self::assertSame('SELECT * FROM parent', $suspects[0]['likely_parent']['sql_shape']);
     }
@@ -135,7 +136,7 @@ final class QueryShapesTest extends TestCase
 
     public function testNPlusOneSuspectsIgnoresParentWithSameShape(): void
     {
-        // Als de 'parent' dezelfde shape heeft, is het geen parent maar dezelfde lus.
+        // If the 'parent' has the same shape, it is not a parent but the same loop.
         $queries = [
             self::query('SELECT * FROM child WHERE parent_id = 99', 1.0, [
                 ['file' => '/app/src/Other.php', 'line' => 5, 'call' => 'Other::x'],
@@ -154,17 +155,17 @@ final class QueryShapesTest extends TestCase
         $before = QueryShapes::countByShape([
             self::query('SELECT * FROM a WHERE id = 1', 1.0),
             self::query('SELECT * FROM a WHERE id = 2', 1.0),
-            self::query('SELECT * FROM weg WHERE id = 1', 1.0),
+            self::query('SELECT * FROM gone WHERE id = 1', 1.0),
         ]);
         $after = QueryShapes::countByShape([
             self::query('SELECT * FROM a WHERE id = 5', 1.0),
-            self::query('SELECT * FROM nieuw WHERE id = 1', 1.0),
+            self::query('SELECT * FROM fresh WHERE id = 1', 1.0),
         ]);
 
         $diff = QueryShapes::diff($before, $after);
 
-        self::assertSame([['sql_shape' => 'SELECT * FROM weg WHERE id = ?', 'executions' => 1]], $diff['removed']);
-        self::assertSame([['sql_shape' => 'SELECT * FROM nieuw WHERE id = ?', 'executions' => 1]], $diff['added']);
+        self::assertSame([['sql_shape' => 'SELECT * FROM gone WHERE id = ?', 'executions' => 1]], $diff['removed']);
+        self::assertSame([['sql_shape' => 'SELECT * FROM fresh WHERE id = ?', 'executions' => 1]], $diff['added']);
         self::assertSame([['sql_shape' => 'SELECT * FROM a WHERE id = ?', 'before' => 2, 'after' => 1]], $diff['changed']);
     }
 
@@ -177,10 +178,10 @@ final class QueryShapesTest extends TestCase
 
     public function testTruncateShapeSignalsTruncation(): void
     {
-        // Korte shapes blijven ongemoeid, zonder signaal.
+        // Short shapes are left alone, without a signal.
         self::assertSame(['sql_shape' => 'SELECT 1 FROM t'], QueryShapes::truncateShape('SELECT 1 FROM t'));
 
-        $long = 'SELECT '.str_repeat('kolom, ', 100).'x FROM t';
+        $long = 'SELECT '.str_repeat('column, ', 100).'x FROM t';
         $truncated = QueryShapes::truncateShape($long);
         self::assertSame(mb_substr($long, 0, QueryShapes::MAX_SHAPE_CHARS), $truncated['sql_shape']);
         self::assertTrue($truncated['sql_shape_truncated'] ?? false);
@@ -190,11 +191,11 @@ final class QueryShapesTest extends TestCase
     {
         $long = 'SELECT '.str_repeat('a', 500);
 
-        $diff = QueryShapes::diff([$long => 1], [$long => 2, 'SELECT 1 FROM nieuw' => 1]);
+        $diff = QueryShapes::diff([$long => 1], [$long => 2, 'SELECT 1 FROM fresh' => 1]);
 
         self::assertSame(mb_substr($long, 0, QueryShapes::MAX_SHAPE_CHARS), $diff['changed'][0]['sql_shape']);
         self::assertTrue($diff['changed'][0]['sql_shape_truncated'] ?? false);
-        // Niet-getrunceerde shapes krijgen géén signaal.
+        // Non-truncated shapes get no signal.
         self::assertArrayNotHasKey('sql_shape_truncated', $diff['added'][0]);
     }
 

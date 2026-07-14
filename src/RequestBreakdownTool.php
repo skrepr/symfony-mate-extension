@@ -16,13 +16,13 @@ final class RequestBreakdownTool
     }
 
     /**
-     * @param string|null $token     Profiler-token; leeg = recentste (evt. via urlFilter)
-     * @param string|null $urlFilter Substring-filter op de URL om het recentste passende request te pakken
+     * @param string|null $token     Profiler token; empty = most recent (optionally via urlFilter)
+     * @param string|null $urlFilter Substring filter on the URL to pick the most recent matching request
      */
     #[McpTool(
         name: 'request_breakdown',
         title: 'Request Breakdown',
-        description: 'Splitst de wall-clock van één request op per categorie (Doctrine/DB, externe http_client-calls, template-rendering, event listeners, …) — zodat je ziet waar de tijd heen ging, niet alleen in de DB. Let op: categorieën kunnen nesten (bv. controller omvat doctrine/template), dus ze tellen niet per se op tot 100%.',
+        description: 'Breaks down the wall clock of a single request per category (Doctrine/DB, external http_client calls, template rendering, event listeners, …) — so you can see where the time went, not just in the DB. Note: categories can nest (e.g. controller contains doctrine/template), so they do not necessarily add up to 100%.',
     )]
     public function requestBreakdown(?string $token = null, ?string $urlFilter = null): string
     {
@@ -49,8 +49,8 @@ final class RequestBreakdownTool
             ],
             'categories' => $categories,
             'note' => [] !== $categories
-                ? "Categorieën kunnen nesten (bv. 'controller' omvat 'doctrine'/'template'); ze tellen niet per se op tot total_ms."
-                : "Geen timeline beschikbaar — draait de 'time'-collector (standaard aan in dev met de profiler)?",
+                ? "Categories can nest (e.g. 'controller' contains 'doctrine'/'template'); they do not necessarily add up to total_ms."
+                : "No timeline available — is the 'time' collector running (enabled by default in dev with the profiler)?",
         ]);
     }
 }

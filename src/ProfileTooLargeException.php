@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Skrepr\PerformanceMate;
 
 /**
- * Gegooid wanneer een profielbestand groter is dan de veilige leeslimiet.
+ * Thrown when a profile file is larger than the safe read limit.
  *
- * Symfony unserializet een profiel in één keer en dat kost ±100x de
- * bestandsgrootte aan RAM (een 500 met volledige exception-dump is ~1 MB op
- * schijf en ~100 MB in geheugen). Eén uitschieter zou het serverproces anders
- * met een fatale, niet-vangbare OOM omleggen. Zie ProfileReader::$maxProfileBytes.
+ * Symfony unserializes a profile in one go and that costs ±100x the file size
+ * in RAM (a 500 with a full exception dump is ~1 MB on disk and ~100 MB in
+ * memory). A single outlier would otherwise take the server process down with
+ * a fatal, uncatchable OOM. See ProfileReader::$maxProfileBytes.
  */
 final class ProfileTooLargeException extends \RuntimeException
 {
@@ -20,7 +20,7 @@ final class ProfileTooLargeException extends \RuntimeException
         public readonly int $maxBytes,
     ) {
         parent::__construct(sprintf(
-            'Profiel %s is %d bytes op schijf en overschrijdt de veilige leeslimiet van %d bytes; overgeslagen om een out-of-memory te voorkomen. Verhoog skrepr_mate.max_profile_bytes als je dit profiel toch wilt analyseren.',
+            'Profile %s is %d bytes on disk and exceeds the safe read limit of %d bytes; skipped to prevent an out-of-memory. Raise skrepr_mate.max_profile_bytes if you still want to analyze this profile.',
             $token,
             $bytes,
             $maxBytes,

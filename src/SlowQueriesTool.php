@@ -16,14 +16,14 @@ final class SlowQueriesTool
     }
 
     /**
-     * @param int         $requests  Aantal recente requests om te analyseren (1-50)
-     * @param int         $top       Aantal traagste query-shapes om terug te geven
-     * @param string|null $urlFilter Substring-filter op de URL, bv. '/checkout'
+     * @param int         $requests  Number of recent requests to analyze (1-50)
+     * @param int         $top       Number of slowest query shapes to return
+     * @param string|null $urlFilter Substring filter on the URL, e.g. '/checkout'
      */
     #[McpTool(
         name: 'slow_queries',
         title: 'Slow Queries',
-        description: 'Traagste query-shapes over de laatste N requests, gegroepeerd op genormaliseerde SQL, met totale tijd, aantal uitvoeringen en de veroorzakende regel projectcode. Let op de aard van origin: bij SELECTs wijst die naar de echte trigger (actionable); bij INSERT/UPDATE/COMMIT wijst origin meestal naar de flush()-regel — kijk dan naar de persist-/business-logica, niet naar die regel zelf.',
+        description: 'Slowest query shapes over the last N requests, grouped by normalized SQL, with total time, execution count and the originating line of project code. Mind the nature of origin: for SELECTs it points to the real trigger (actionable); for INSERT/UPDATE/COMMIT origin usually points to the flush() line — look at the persist/business logic instead, not at that line itself.',
     )]
     public function slowQueries(int $requests = 15, int $top = 10, ?string $urlFilter = null): string
     {

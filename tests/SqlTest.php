@@ -21,51 +21,51 @@ final class SqlTest extends TestCase
      */
     public static function provideNormalize(): iterable
     {
-        yield 'whitespace klapt samen' => [
+        yield 'whitespace collapses' => [
             "SELECT *\n  FROM t\t WHERE a = b",
             'SELECT * FROM t WHERE a = b',
         ];
-        yield 'string-literal wordt ?' => [
+        yield 'string literal becomes ?' => [
             "SELECT * FROM t WHERE name = 'jacob'",
             'SELECT * FROM t WHERE name = ?',
         ];
-        yield 'escaped quote binnen literal' => [
+        yield 'escaped quote inside literal' => [
             "SELECT * FROM t WHERE name = 'it\\'s'",
             'SELECT * FROM t WHERE name = ?',
         ];
-        yield 'getallen worden ?' => [
+        yield 'numbers become ?' => [
             'SELECT * FROM t WHERE id = 42 AND score > 3.14',
             'SELECT * FROM t WHERE id = ? AND score > ?',
         ];
-        yield 'cijfer in identifier blijft staan' => [
+        yield 'digit in identifier stays' => [
             'SELECT col1 FROM t1',
             'SELECT col1 FROM t1',
         ];
-        yield 'IN-lijst met waarden klapt samen' => [
+        yield 'IN list with values collapses' => [
             'SELECT * FROM t WHERE id IN (1, 2, 3)',
             'SELECT * FROM t WHERE id IN (?)',
         ];
-        yield 'IN-lijst met placeholders klapt samen' => [
+        yield 'IN list with placeholders collapses' => [
             'SELECT * FROM t WHERE id IN (?, ?, ?)',
             'SELECT * FROM t WHERE id IN (?)',
         ];
-        yield 'semantisch gelijke queries krijgen dezelfde shape' => [
+        yield 'semantically equal queries get the same shape' => [
             "SELECT * FROM users WHERE email = 'a@example.com'   AND age > 30",
             'SELECT * FROM users WHERE email = ? AND age > ?',
         ];
-        yield 'doubled-quote escaping binnen literal' => [
+        yield 'doubled-quote escaping inside literal' => [
             "SELECT * FROM t WHERE name = 'it''s'",
             'SELECT * FROM t WHERE name = ?',
         ];
         yield 'dollar-quoted literal (PostgreSQL)' => [
-            'SELECT * FROM t WHERE body = $$tekst; met ' . "'rare'" . ' inhoud$$',
+            'SELECT * FROM t WHERE body = $$text; with ' . "'odd'" . ' content$$',
             'SELECT * FROM t WHERE body = ?',
         ];
-        yield 'dollar-quoted literal met tag' => [
+        yield 'dollar-quoted literal with tag' => [
             'SELECT * FROM t WHERE body = $fn$SELECT 1;$fn$',
             'SELECT * FROM t WHERE body = ?',
         ];
-        yield 'double-quoted identifier blijft staan' => [
+        yield 'double-quoted identifier stays' => [
             'SELECT "name" FROM "users" WHERE id = 7',
             'SELECT "name" FROM "users" WHERE id = ?',
         ];
@@ -82,18 +82,18 @@ final class SqlTest extends TestCase
      */
     public static function provideHasMultipleStatements(): iterable
     {
-        yield 'één statement' => ['SELECT 1', false];
-        yield 'afsluitende puntkomma is ok' => ['SELECT 1;', false];
-        yield 'dubbele afsluitende puntkomma is ok' => ['SELECT 1;;  ', false];
-        yield 'puntkomma in string-literal is ok' => ["SELECT ';' FROM t WHERE a = 'x;y'", false];
-        yield 'puntkomma in escaped literal is ok' => ["SELECT * FROM t WHERE a = 'it\\'s; fine'", false];
-        yield 'puntkomma in double-quoted identifier is ok' => ['SELECT "kolom;raar" FROM t', false];
-        yield 'puntkomma in backtick-identifier is ok' => ['SELECT `kolom;raar` FROM t', false];
-        yield 'puntkomma in regel-comment is ok' => ["SELECT 1 -- ; geen tweede statement\nFROM t", false];
-        yield 'puntkomma in blok-comment is ok' => ['SELECT 1 /* ; */ FROM t', false];
-        yield 'twee statements' => ['SELECT 1; DELETE FROM users', true];
-        yield 'twee statements met afsluiter' => ['SELECT 1; SELECT 2;', true];
-        yield 'injectie na literal' => ["SELECT * FROM t WHERE a = 'x'; DROP TABLE t", true];
+        yield 'one statement' => ['SELECT 1', false];
+        yield 'trailing semicolon is ok' => ['SELECT 1;', false];
+        yield 'double trailing semicolon is ok' => ['SELECT 1;;  ', false];
+        yield 'semicolon in string literal is ok' => ["SELECT ';' FROM t WHERE a = 'x;y'", false];
+        yield 'semicolon in escaped literal is ok' => ["SELECT * FROM t WHERE a = 'it\\'s; fine'", false];
+        yield 'semicolon in double-quoted identifier is ok' => ['SELECT "col;odd" FROM t', false];
+        yield 'semicolon in backtick identifier is ok' => ['SELECT `col;odd` FROM t', false];
+        yield 'semicolon in line comment is ok' => ["SELECT 1 -- ; no second statement\nFROM t", false];
+        yield 'semicolon in block comment is ok' => ['SELECT 1 /* ; */ FROM t', false];
+        yield 'two statements' => ['SELECT 1; DELETE FROM users', true];
+        yield 'two statements with terminator' => ['SELECT 1; SELECT 2;', true];
+        yield 'injection after literal' => ["SELECT * FROM t WHERE a = 'x'; DROP TABLE t", true];
     }
 
     public function testTopFrameReturnsFirstProjectFrame(): void
@@ -136,7 +136,7 @@ final class SqlTest extends TestCase
     {
         $file = tempnam(sys_get_temp_dir(), 'mate-test-');
         self::assertNotFalse($file);
-        file_put_contents($file, implode("\n", ['regel 1', 'regel 2', 'regel 3', 'regel 4', 'regel 5']));
+        file_put_contents($file, implode("\n", ['line 1', 'line 2', 'line 3', 'line 4', 'line 5']));
 
         try {
             $context = Sql::sourceContext(['file' => $file, 'line' => 3, 'call' => ''], 1);
@@ -145,9 +145,9 @@ final class SqlTest extends TestCase
             self::assertSame($file, $context['file']);
             self::assertSame(3, $context['line']);
             self::assertSame([
-                ['line' => 2, 'code' => 'regel 2'],
-                ['line' => 3, 'code' => 'regel 3', 'origin' => true],
-                ['line' => 4, 'code' => 'regel 4'],
+                ['line' => 2, 'code' => 'line 2'],
+                ['line' => 3, 'code' => 'line 3', 'origin' => true],
+                ['line' => 4, 'code' => 'line 4'],
             ], $context['snippet']);
         } finally {
             unlink($file);
@@ -163,7 +163,7 @@ final class SqlTest extends TestCase
 
         self::assertSame('/app/src/Repo.php:10 (Repo::find)', $fields['origin']);
         self::assertSame($chain, $fields['origin_chain']);
-        // Het frame-bestand bestaat hier niet, dus geen broncontext.
+        // The frame's file does not exist here, so no source context.
         self::assertNull($fields['origin_context']);
     }
 
@@ -186,7 +186,7 @@ final class SqlTest extends TestCase
     public function testSourceContextReturnsNullForMissingFileOrInvalidLine(): void
     {
         self::assertNull(Sql::sourceContext(null));
-        self::assertNull(Sql::sourceContext(['file' => '/bestaat/niet.php', 'line' => 1, 'call' => '']));
+        self::assertNull(Sql::sourceContext(['file' => '/does/not/exist.php', 'line' => 1, 'call' => '']));
         self::assertNull(Sql::sourceContext(['file' => __FILE__, 'line' => null, 'call' => '']));
         self::assertNull(Sql::sourceContext(['file' => __FILE__, 'line' => 1000000, 'call' => '']));
     }

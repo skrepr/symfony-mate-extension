@@ -48,22 +48,22 @@ final class ProfileReaderTest extends TestCase
     {
         yield 'megabytes' => ['128M', 128 * 1024 * 1024];
         yield 'gigabytes' => ['1G', 1024 * 1024 * 1024];
-        yield 'kilobytes kleine letter' => ['512k', 512 * 1024];
-        yield 'kale bytes' => ['134217728', 134217728];
-        yield 'onbeperkt' => ['-1', -1];
-        yield 'lege string' => ['', 0];
-        yield 'met spaties' => [' 256M ', 256 * 1024 * 1024];
-        // PHP's zend_ini_parse_quantity stopt de integer-parse bij de punt en maakt
-        // van '0.5G' dus 0; parseBytes spiegelt dat gedrag bewust.
-        yield 'fractioneel volgt PHP-semantiek' => ['0.5G', 0];
+        yield 'kilobytes lowercase' => ['512k', 512 * 1024];
+        yield 'bare bytes' => ['134217728', 134217728];
+        yield 'unlimited' => ['-1', -1];
+        yield 'empty string' => ['', 0];
+        yield 'with spaces' => [' 256M ', 256 * 1024 * 1024];
+        // PHP's zend_ini_parse_quantity stops the integer parse at the dot and
+        // thus turns '0.5G' into 0; parseBytes deliberately mirrors that behavior.
+        yield 'fractional follows PHP semantics' => ['0.5G', 0];
     }
 
     /**
-     * Pint het padschema van profileFilePath() vast tegen een écht door
-     * FileProfilerStorage geschreven profiel: met maxProfileBytes=1 mag read()
-     * alleen ProfileTooLargeException gooien als de guard het bestand VINDT.
-     * Wijzigt Symfony het schema, dan faalt deze test — dat is het signaal om
-     * ProfileReader::profileFilePath() bij te werken.
+     * Pins the path scheme of profileFilePath() against a profile actually
+     * written by FileProfilerStorage: with maxProfileBytes=1, read() may only
+     * throw ProfileTooLargeException if the guard FINDS the file. If Symfony
+     * changes the scheme, this test fails — that is the signal to update
+     * ProfileReader::profileFilePath().
      */
     public function testGuardFindsTheFileWrittenByFileProfilerStorage(): void
     {
@@ -98,8 +98,8 @@ final class ProfileReaderTest extends TestCase
         $first = $reader->read('abcdef');
         self::assertNotNull($first);
 
-        // Verwijder alles op schijf: een tweede read kan alleen nog slagen
-        // als hij uit de in-process cache komt.
+        // Delete everything on disk: a second read can only succeed if it
+        // comes from the in-process cache.
         $it = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS),
         );
@@ -111,13 +111,13 @@ final class ProfileReaderTest extends TestCase
         }
 
         self::assertSame($first, $reader->read('abcdef'));
-        // Een verse reader zonder cache vindt het profiel niet meer.
+        // A fresh reader without a cache no longer finds the profile.
         self::assertNull((new ProfileReader($this->dir))->read('abcdef'));
     }
 
     public function testReadReturnsNullForUnknownToken(): void
     {
-        self::assertNull((new ProfileReader($this->dir))->read('bestaatniet'));
+        self::assertNull((new ProfileReader($this->dir))->read('doesnotexist'));
     }
 
     public function testFindRecentAndLatestToken(): void
@@ -131,7 +131,7 @@ final class ProfileReaderTest extends TestCase
         self::assertCount(2, $recent);
 
         self::assertSame('token2', $reader->latestToken('/b'));
-        self::assertNull($reader->latestToken('/bestaat-niet'));
+        self::assertNull($reader->latestToken('/does-not-exist'));
     }
 
     private function writeProfile(string $token, string $url = 'http://localhost/test'): void

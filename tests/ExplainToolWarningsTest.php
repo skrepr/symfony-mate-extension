@@ -16,7 +16,7 @@ final class ExplainToolWarningsTest extends TestCase
         ]);
 
         self::assertCount(1, $warnings);
-        self::assertStringContainsString("Full table scan op 'users'", $warnings[0]);
+        self::assertStringContainsString("Full table scan on 'users'", $warnings[0]);
     }
 
     public function testMysqlUnusedIndex(): void
@@ -26,7 +26,7 @@ final class ExplainToolWarningsTest extends TestCase
         ]);
 
         self::assertCount(1, $warnings);
-        self::assertStringContainsString("niet gebruikt op 'orders'", $warnings[0]);
+        self::assertStringContainsString("not used on 'orders'", $warnings[0]);
     }
 
     public function testMysqlFilesortAndTemporary(): void
@@ -37,7 +37,7 @@ final class ExplainToolWarningsTest extends TestCase
 
         self::assertCount(2, $warnings);
         self::assertStringContainsString('Filesort', $warnings[0]);
-        self::assertStringContainsString('Tijdelijke tabel', $warnings[1]);
+        self::assertStringContainsString('Temporary table', $warnings[1]);
     }
 
     public function testMysqlDeduplicatesIdenticalWarnings(): void
@@ -57,7 +57,7 @@ final class ExplainToolWarningsTest extends TestCase
         ]);
 
         self::assertCount(1, $warnings);
-        self::assertStringContainsString("Sequential scan op 'orders'", $warnings[0]);
+        self::assertStringContainsString("Sequential scan on 'orders'", $warnings[0]);
     }
 
     public function testSqliteFullScan(): void

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Skrepr\PerformanceMate;
 
 /**
- * Pure SQL-/backtrace-helpers.
+ * Pure SQL/backtrace helpers.
  *
  * @phpstan-type Frame array{file: string, line: int|null, call: string}
  * @phpstan-type SourceContext array{file: string, line: int, snippet: list<array{line: int, code: string, origin?: true}>}
@@ -13,49 +13,49 @@ namespace Skrepr\PerformanceMate;
 final class Sql
 {
     /**
-     * SQL normaliseren zodat identieke query-shapes samenvallen. Double-quoted
-     * strings blijven bewust staan: dat zijn standaard-SQL identifiers, en die
-     * vervangen zou verschillende queries onterecht laten samenvallen.
+     * Normalize SQL so that identical query shapes coincide. Double-quoted
+     * strings are deliberately left alone: those are standard SQL identifiers,
+     * and replacing them would incorrectly collapse different queries.
      */
     public static function normalize(string $sql): string
     {
         $s = preg_replace('/\$(\w*)\$.*?\$\1\$/s', '?', $sql) ?? $sql;  // dollar-quoted literals (PostgreSQL)
         $s = preg_replace('/\s+/', ' ', $s) ?? $s;
-        $s = preg_replace("/'(?:[^'\\\\]|\\\\.|'')*'/", '?', $s) ?? $s; // string-literals (met \' en '' escapes)
-        $s = preg_replace('/\b\d+(\.\d+)?\b/', '?', $s) ?? $s;          // getallen
+        $s = preg_replace("/'(?:[^'\\\\]|\\\\.|'')*'/", '?', $s) ?? $s; // string literals (with \' and '' escapes)
+        $s = preg_replace('/\b\d+(\.\d+)?\b/', '?', $s) ?? $s;          // numbers
         $s = preg_replace('/IN\s*\(\s*(?:\?\s*,?\s*)+\)/i', 'IN (?)', $s) ?? $s;
 
         return trim($s);
     }
 
     /**
-     * True wanneer de string meer dan één SQL-statement bevat. String-literals,
-     * quoted identifiers en comments worden eerst gestript zodat een ';' dáárin
-     * niet meetelt; afsluitende ';'s tellen evenmin.
+     * True when the string contains more than one SQL statement. String literals,
+     * quoted identifiers and comments are stripped first so that a ';' inside
+     * them does not count; trailing ';'s do not count either.
      */
     public static function hasMultipleStatements(string $sql): bool
     {
         $stripped = preg_replace(
             [
-                "/'(?:[^'\\\\]|\\\\.|'')*'/s",  // single-quoted literals (met \' en '' escapes)
+                "/'(?:[^'\\\\]|\\\\.|'')*'/s",  // single-quoted literals (with \' and '' escapes)
                 '/"(?:[^"\\\\]|\\\\.)*"/s',      // double-quoted literals/identifiers
-                '/`[^`]*`/s',                     // backtick-identifiers (MySQL)
-                '/--[^\r\n]*/',                   // regel-comments
-                '/#[^\r\n]*/',                    // regel-comments (MySQL)
-                '~/\*.*?\*/~s',                   // blok-comments
+                '/`[^`]*`/s',                     // backtick identifiers (MySQL)
+                '/--[^\r\n]*/',                   // line comments
+                '/#[^\r\n]*/',                    // line comments (MySQL)
+                '~/\*.*?\*/~s',                   // block comments
             ],
             ' ',
             $sql,
         );
         if (null === $stripped) {
-            return true; // regex-fout: veilig weigeren
+            return true; // regex failure: refuse safely
         }
 
         return str_contains(rtrim($stripped, "; \t\n\r"), ';');
     }
 
     /**
-     * Bovenste project-frame (innermost) — waar de query vandaan komt.
+     * Topmost project frame (innermost) — where the query comes from.
      *
      * @param list<Frame> $backtrace
      *
@@ -81,8 +81,8 @@ final class Sql
     }
 
     /**
-     * Volledige project-frame-keten (innermost eerst). Bij een write toont dit
-     * de weg naar flush(), zodat de agent de persist-locatie ziet.
+     * Full project frame chain (innermost first). For a write this shows the
+     * path to flush(), so the agent can see the persist location.
      *
      * @param list<Frame> $backtrace
      *
@@ -101,9 +101,9 @@ final class Sql
     }
 
     /**
-     * De drie origin-velden voor tool-output, met één consistente, actionable
-     * fallback wanneer er geen backtrace beschikbaar is. origin_chain is alleen
-     * gevuld als hij méér vertelt dan origin zelf (meer dan één frame).
+     * The three origin fields for tool output, with a single consistent,
+     * actionable fallback when no backtrace is available. origin_chain is only
+     * filled when it tells more than origin itself (more than one frame).
      *
      * @param Frame|null   $frame
      * @param list<string> $chain
@@ -115,15 +115,15 @@ final class Sql
         return [
             'origin' => null !== $frame
                 ? self::formatFrame($frame)
-                : 'onbekend — zet doctrine.dbal.profiling_collect_backtrace: true in config/packages/dev/doctrine.yaml',
+                : 'unknown — set doctrine.dbal.profiling_collect_backtrace: true in config/packages/dev/doctrine.yaml',
             'origin_chain' => \count($chain) > 1 ? $chain : null,
             'origin_context' => self::sourceContext($frame),
         ];
     }
 
     /**
-     * Leest de veroorzakende regel + omliggende context uit de projectbron. De
-     * tool draait in de container, dus de absolute frame-paden zijn direct leesbaar.
+     * Reads the offending line + surrounding context from the project source. The
+     * tool runs inside the container, so the absolute frame paths are directly readable.
      *
      * @param Frame|null $frame
      *

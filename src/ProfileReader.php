@@ -12,9 +12,9 @@ use Symfony\Component\HttpKernel\Profiler\FileProfilerStorage;
 use Symfony\Component\VarDumper\Cloner\Data;
 
 /**
- * Leest Symfony-profielen direct via FileProfilerStorage. Levert per profiel
- * queries (met project-backtrace-frames) en een timeline per categorie — precies
- * wat de analyse-tools nodig hebben en wat de genormaliseerde bridge-output niet geeft.
+ * Reads Symfony profiles directly via FileProfilerStorage. Provides, per profile,
+ * the queries (with project backtrace frames) and a per-category timeline — exactly
+ * what the analysis tools need and what the normalized bridge output does not give.
  *
  * @phpstan-type Frame array{file: string, line: int|null, call: string}
  * @phpstan-type Query array{connection: string, sql: string, ms: float, backtrace: list<Frame>}
@@ -26,24 +26,23 @@ use Symfony\Component\VarDumper\Cloner\Data;
  */
 final class ProfileReader
 {
-    /** Boven deze bestandsgrootte (bytes op schijf) slaan we een profiel over i.p.v. het te unserializen. */
+    /** Above this file size (bytes on disk) we skip a profile instead of unserializing it. */
     public const DEFAULT_MAX_PROFILE_BYTES = 4 * 1024 * 1024;
 
-    /** Ondergrens memory_limit voor dit proces; zie ensureMemoryHeadroom(). */
+    /** Lower bound for this process's memory_limit; see ensureMemoryHeadroom(). */
     private const MIN_MEMORY_LIMIT_BYTES = 1024 * 1024 * 1024;
 
-    /** Aantal gedistilleerde profielen dat in-process gecachet blijft. */
+    /** Number of distilled profiles kept in the in-process cache. */
     private const MAX_CACHED_PROFILES = 20;
 
     private readonly FileProfilerStorage $storage;
 
     /**
-     * Cache van gedistilleerde profielen. De MCP-server is langlevend en de
-     * agent-workflow leest hetzelfde profiel meerdere keren (breakdown → N+1 →
-     * diff); unserializen is de duurste operatie hier (±100x bestandsgrootte
-     * aan RAM). Profielen zijn immutable zodra geschreven, dus invalidatie is
-     * niet nodig. We bewaren het kleine gedistilleerde array, nooit het rauwe
-     * Profile-object.
+     * Cache of distilled profiles. The MCP server is long-lived and the agent
+     * workflow reads the same profile several times (breakdown → N+1 → diff);
+     * unserializing is the most expensive operation here (±100x the file size
+     * in RAM). Profiles are immutable once written, so invalidation is not
+     * needed. We keep the small distilled array, never the raw Profile object.
      *
      * @var array<string, StructuredProfile>
      */
@@ -58,7 +57,7 @@ final class ProfileReader
     }
 
     /**
-     * Recente request-meta's (nieuwste eerst), optioneel gefilterd op URL-substring.
+     * Recent request metas (newest first), optionally filtered on a URL substring.
      *
      * @return list<array{token: string, method: string, url: string, status_code: int, time: int}>
      */
@@ -78,7 +77,7 @@ final class ProfileReader
         return $out;
     }
 
-    /** Token van het recentste request (optioneel gefilterd op URL-substring), of null. */
+    /** Token of the most recent request (optionally filtered on a URL substring), or null. */
     public function latestToken(string $urlFilter = ''): ?string
     {
         $metas = $this->findRecent(1, $urlFilter);
@@ -87,17 +86,17 @@ final class ProfileReader
     }
 
     /**
-     * Volledig, gestructureerd profiel voor één token, of null als het niet bestaat.
+     * Full, structured profile for a single token, or null if it does not exist.
      *
      * @return StructuredProfile|null
      *
-     * @throws ProfileTooLargeException wanneer het profielbestand de veilige leeslimiet overschrijdt
+     * @throws ProfileTooLargeException when the profile file exceeds the safe read limit
      */
     public function read(string $token): ?array
     {
         if (isset($this->cache[$token])) {
             $cached = $this->cache[$token];
-            // Herplaatsen naar het einde: recentst gebruikt wordt het laatst verdrongen.
+            // Move to the end: the most recently used profile is evicted last.
             unset($this->cache[$token]);
             $this->cache[$token] = $cached;
 
@@ -110,13 +109,13 @@ final class ProfileReader
             return null;
         }
 
-        // Fail-closed: de storage vond een profiel dat profileFilePath() niet kon
-        // vinden — dan is Symfony's padschema gewijzigd en staat de size-guard
-        // buitenspel. Hard falen zodat dit opgemerkt wordt i.p.v. een stille
-        // OOM-blootstelling. (Hercheck vangt de race af waarin het profiel pas
-        // ná de guard-check geschreven werd.)
+        // Fail closed: the storage found a profile that profileFilePath() could
+        // not find — then Symfony's path scheme has changed and the size guard
+        // is out of play. Fail hard so this gets noticed instead of a silent
+        // OOM exposure. (The re-check covers the race where the profile was
+        // written only after the guard check.)
         if (!$fileFound && !is_file($this->profileFilePath($token))) {
-            throw new \LogicException(sprintf('Profiel %s is gelezen maar profileFilePath() vond het bestand niet: het padschema van FileProfilerStorage is vermoedelijk gewijzigd. Werk ProfileReader::profileFilePath() bij.', $token));
+            throw new \LogicException(sprintf('Profile %s was read but profileFilePath() did not find the file: the path scheme of FileProfilerStorage has presumably changed. Update ProfileReader::profileFilePath().', $token));
         }
 
         $out = [
@@ -155,7 +154,7 @@ final class ProfileReader
         }
 
         if (\count($this->cache) >= self::MAX_CACHED_PROFILES) {
-            array_shift($this->cache); // minst recent gebruikte staat vooraan
+            array_shift($this->cache); // least recently used sits at the front
         }
         $this->cache[$token] = $out;
 
@@ -163,12 +162,12 @@ final class ProfileReader
     }
 
     /**
-     * Weigert een profiel dat te groot is om veilig te unserializen. Symfony leest
-     * het profiel in één keer in (±100x de bestandsgrootte aan RAM); een uitschieter
-     * zou het proces met een niet-vangbare OOM omleggen. Ontbrekende bestanden laten
-     * we door: storage->read() geeft daar netjes null op terug.
+     * Refuses a profile that is too large to unserialize safely. Symfony reads
+     * the profile in one go (±100x the file size in RAM); an outlier would take
+     * the process down with an uncatchable OOM. Missing files are let through:
+     * storage->read() neatly returns null for those.
      *
-     * @return bool of het profielbestand op het verwachte pad gevonden is
+     * @return bool whether the profile file was found at the expected path
      *
      * @throws ProfileTooLargeException
      */
@@ -186,23 +185,24 @@ final class ProfileReader
         return true;
     }
 
-    /** Zelfde padschema als Symfony's FileProfilerStorage::getFilename(). */
+    /** Same path scheme as Symfony's FileProfilerStorage::getFilename(). */
     private function profileFilePath(string $token): string
     {
         return $this->profilerDir.'/'.substr($token, -2, 2).'/'.substr($token, -4, 2).'/'.$token;
     }
 
     /**
-     * Verhoogt memory_limit (alleen omhoog) naar een ondergrens. Een profiel wordt in
-     * één unserialize()-call ingelezen en kost ±100x de bestandsgrootte aan RAM; de
-     * PHP-default van 128M legt het proces al om op één 500-profiel met exception-dump.
-     * De harde bovengrens blijft $maxProfileBytes, dat de piek binnen deze grens houdt.
+     * Raises memory_limit (upwards only) to a lower bound. A profile is read in a
+     * single unserialize() call and costs ±100x the file size in RAM; PHP's default
+     * of 128M already kills the process on a single 500 profile with an exception
+     * dump. The hard upper bound remains $maxProfileBytes, which keeps the peak
+     * within this limit.
      */
     private static function ensureMemoryHeadroom(): void
     {
         $current = self::parseBytes(\ini_get('memory_limit'));
         if ($current < 0) {
-            return; // onbeperkt — niets te doen
+            return; // unlimited — nothing to do
         }
         if ($current < self::MIN_MEMORY_LIMIT_BYTES) {
             @ini_set('memory_limit', (string) self::MIN_MEMORY_LIMIT_BYTES);
@@ -210,11 +210,11 @@ final class ProfileReader
     }
 
     /**
-     * memory_limit-notatie ('128M', '1G', '-1', bytes) naar bytes; negatief = onbeperkt.
-     * Spiegelt bewust PHP's eigen zend_ini_parse_quantity: de integer-parse stopt bij
-     * het eerste niet-cijfer, dus '0.5G' is 0 — precies wat PHP er zelf van maakt.
+     * memory_limit notation ('128M', '1G', '-1', bytes) to bytes; negative = unlimited.
+     * Deliberately mirrors PHP's own zend_ini_parse_quantity: the integer parse stops
+     * at the first non-digit, so '0.5G' is 0 — exactly what PHP itself makes of it.
      *
-     * @internal publiek voor tests
+     * @internal public for tests
      */
     public static function parseBytes(string $value): int
     {
@@ -233,9 +233,9 @@ final class ProfileReader
     }
 
     /**
-     * Wall-clock per categorie uit de Stopwatch-events. Categorieen kunnen nesten
-     * (bv. 'controller' omvat 'doctrine'/'template'), dus ze tellen niet per se op
-     * tot de totale duur.
+     * Wall clock per category from the Stopwatch events. Categories can nest
+     * (e.g. 'controller' contains 'doctrine'/'template'), so they do not
+     * necessarily add up to the total duration.
      *
      * @return array<string, float>
      */
@@ -272,8 +272,8 @@ final class ProfileReader
     }
 
     /**
-     * Project-frames uit een query-backtrace (vendor eruit, max 6). Alleen aanwezig
-     * met doctrine.dbal.profiling_collect_backtrace: true; anders leeg.
+     * Project frames from a query backtrace (vendor filtered out, max 6). Only
+     * present with doctrine.dbal.profiling_collect_backtrace: true; empty otherwise.
      *
      * @return list<Frame>
      */
@@ -307,7 +307,7 @@ final class ProfileReader
         return $frames;
     }
 
-    /** Symfony VarDumper Data-objecten omzetten naar platte PHP-waarden. */
+    /** Convert Symfony VarDumper Data objects to plain PHP values. */
     private function plain(mixed $value): mixed
     {
         if ($value instanceof Data) {
@@ -322,7 +322,7 @@ final class ProfileReader
     }
 
     /**
-     * Compacte samenvatting van een gestructureerd profiel voor tool-output.
+     * Compact summary of a structured profile for tool output.
      *
      * @param StructuredProfile $p
      *

@@ -16,14 +16,14 @@ final class ProfileDiffTool
     }
 
     /**
-     * @param string|null $tokenBefore Token van het 'voor'-profiel; leeg = op één na recentste van urlFilter
-     * @param string|null $tokenAfter  Token van het 'na'-profiel; leeg = recentste van urlFilter
-     * @param string|null $urlFilter   Substring-filter op de URL om automatisch de twee recentste te vergelijken
+     * @param string|null $tokenBefore Token of the 'before' profile; empty = second most recent for urlFilter
+     * @param string|null $tokenAfter  Token of the 'after' profile; empty = most recent for urlFilter
+     * @param string|null $urlFilter   Substring filter on the URL to automatically compare the two most recent requests
      */
     #[McpTool(
         name: 'profile_diff',
         title: 'Profile Diff',
-        description: 'Vergelijkt twee profielen van hetzelfde endpoint (voor/na een codewijziging): duur, geheugen, query-count en welke query-shapes zijn verdwenen of bijgekomen. Geef twee tokens, of een urlFilter om automatisch de twee recentste requests te vergelijken.',
+        description: 'Compares two profiles of the same endpoint (before/after a code change): duration, memory, query count and which query shapes disappeared or appeared. Provide two tokens, or a urlFilter to automatically compare the two most recent requests.',
     )]
     public function profileDiff(?string $tokenBefore = null, ?string $tokenAfter = null, ?string $urlFilter = null): string
     {
@@ -32,10 +32,10 @@ final class ProfileDiffTool
         if (null === $before || null === $after) {
             $metas = $this->reader->findRecent(2, $urlFilter ?? '');
             if (\count($metas) < 2) {
-                return $this->json(['error' => 'Minstens twee requests naar dit endpoint nodig om te vergelijken.']);
+                return $this->json(['error' => 'At least two requests to this endpoint are needed to compare.']);
             }
-            $after ??= $metas[0]['token'];   // recentst
-            $before ??= $metas[1]['token'];  // een eerder
+            $after ??= $metas[0]['token'];   // most recent
+            $before ??= $metas[1]['token'];  // one earlier
         }
 
         $pBefore = $this->resolveProfile($before, null);
