@@ -36,8 +36,14 @@ final class SlowQueriesTool
         /** @var array<string, array{total_ms: float, count: int, max_ms: float, sample_sql: string, originFrame: Frame|null, chain: list<string>, seen_on: array<string, true>}> $groups */
         $groups = [];
         $analyzed = 0;
+        $skipped = [];
         foreach ($metas as $meta) {
-            $profile = $this->reader->read($meta['token']);
+            try {
+                $profile = $this->reader->read($meta['token']);
+            } catch (ProfileTooLargeException $e) {
+                $skipped[] = ['token' => $e->token, 'bytes' => $e->bytes];
+                continue;
+            }
             if (null === $profile) {
                 continue;
             }
@@ -82,6 +88,10 @@ final class SlowQueriesTool
             ];
         }
 
-        return $this->json(['analyzed_requests' => $analyzed, 'slow_queries' => $ranked]);
+        return $this->json([
+            'analyzed_requests' => $analyzed,
+            'skipped_too_large' => $skipped,
+            'slow_queries' => $ranked,
+        ]);
     }
 }

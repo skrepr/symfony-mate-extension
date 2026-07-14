@@ -38,8 +38,12 @@ final class ProfileDiffTool
             $before ??= $metas[1]['token'];  // een eerder
         }
 
-        $pBefore = $this->reader->read($before);
-        $pAfter = $this->reader->read($after);
+        try {
+            $pBefore = $this->reader->read($before);
+            $pAfter = $this->reader->read($after);
+        } catch (ProfileTooLargeException $e) {
+            return $this->json(['error' => $e->getMessage()]);
+        }
         if (null === $pBefore || null === $pAfter) {
             return $this->json(['error' => 'Eén van beide profielen kon niet gelezen worden.']);
         }

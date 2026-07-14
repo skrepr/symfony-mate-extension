@@ -26,11 +26,20 @@ use Symfony\Component\VarDumper\Cloner\Data;
  */
 final class ProfileReader
 {
+    /** Boven deze bestandsgrootte (bytes op schijf) slaan we een profiel over i.p.v. het te unserializen. */
+    public const DEFAULT_MAX_PROFILE_BYTES = 4 * 1024 * 1024;
+
+    /** Ondergrens memory_limit voor dit proces; zie ensureMemoryHeadroom(). */
+    private const MIN_MEMORY_LIMIT_BYTES = 1024 * 1024 * 1024;
+
     private readonly FileProfilerStorage $storage;
 
-    public function __construct(string $profilerDir)
-    {
+    public function __construct(
+        private readonly string $profilerDir,
+        private readonly int $maxProfileBytes = self::DEFAULT_MAX_PROFILE_BYTES,
+    ) {
         $this->storage = new FileProfilerStorage('file:'.$profilerDir);
+        self::ensureMemoryHeadroom();
     }
 
     /**
@@ -58,9 +67,12 @@ final class ProfileReader
      * Volledig, gestructureerd profiel voor één token, of null als het niet bestaat.
      *
      * @return StructuredProfile|null
+     *
+     * @throws ProfileTooLargeException wanneer het profielbestand de veilige leeslimiet overschrijdt
      */
     public function read(string $token): ?array
     {
+        $this->guardProfileSize($token);
         $profile = $this->storage->read($token);
         if (null === $profile) {
             return null;
@@ -102,6 +114,66 @@ final class ProfileReader
         }
 
         return $out;
+    }
+
+    /**
+     * Weigert een profiel dat te groot is om veilig te unserializen. Symfony leest
+     * het profiel in één keer in (±100x de bestandsgrootte aan RAM); een uitschieter
+     * zou het proces met een niet-vangbare OOM omleggen. Ontbrekende bestanden laten
+     * we door: storage->read() geeft daar netjes null op terug.
+     *
+     * @throws ProfileTooLargeException
+     */
+    private function guardProfileSize(string $token): void
+    {
+        $path = $this->profileFilePath($token);
+        if (!is_file($path)) {
+            return;
+        }
+        $bytes = filesize($path);
+        if (false !== $bytes && $bytes > $this->maxProfileBytes) {
+            throw new ProfileTooLargeException($token, $bytes, $this->maxProfileBytes);
+        }
+    }
+
+    /** Zelfde padschema als Symfony's FileProfilerStorage::getFilename(). */
+    private function profileFilePath(string $token): string
+    {
+        return $this->profilerDir.'/'.substr($token, -2, 2).'/'.substr($token, -4, 2).'/'.$token;
+    }
+
+    /**
+     * Verhoogt memory_limit (alleen omhoog) naar een ondergrens. Een profiel wordt in
+     * één unserialize()-call ingelezen en kost ±100x de bestandsgrootte aan RAM; de
+     * PHP-default van 128M legt het proces al om op één 500-profiel met exception-dump.
+     * De harde bovengrens blijft $maxProfileBytes, dat de piek binnen deze grens houdt.
+     */
+    private static function ensureMemoryHeadroom(): void
+    {
+        $current = self::parseBytes(\ini_get('memory_limit'));
+        if ($current < 0) {
+            return; // onbeperkt — niets te doen
+        }
+        if ($current < self::MIN_MEMORY_LIMIT_BYTES) {
+            @ini_set('memory_limit', (string) self::MIN_MEMORY_LIMIT_BYTES);
+        }
+    }
+
+    /** memory_limit-notatie ('128M', '1G', '-1', bytes) naar bytes; negatief = onbeperkt. */
+    private static function parseBytes(string $value): int
+    {
+        $value = trim($value);
+        if ('' === $value) {
+            return 0;
+        }
+        $number = (int) $value;
+
+        return match (strtolower($value[-1])) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 
     /**

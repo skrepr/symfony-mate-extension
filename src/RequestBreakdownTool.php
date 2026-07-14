@@ -33,7 +33,11 @@ final class RequestBreakdownTool
         if (null === $token) {
             return $this->json(['error' => 'Geen requests gevonden — doe eerst een request naar de app.']);
         }
-        $p = $this->reader->read($token);
+        try {
+            $p = $this->reader->read($token);
+        } catch (ProfileTooLargeException $e) {
+            return $this->json(['error' => $e->getMessage()]);
+        }
         if (null === $p) {
             return $this->json(['error' => "Geen profiel gevonden voor token {$token}."]);
         }

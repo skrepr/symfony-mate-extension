@@ -28,6 +28,11 @@ return static function (ContainerConfigurator $container): void {
         // (zet dan mate.env_file in je app-config). Overschrijf voor een andere DB:
         //   ->set('skrepr_runtime_mate.database_url', '%env(resolve:MIJN_DB_URL)%')
         ->set('skrepr_runtime_mate.database_url', '')
+        // Profielen groter dan dit (bytes op schijf) worden overgeslagen i.p.v.
+        // ge-unserialized: Symfony leest een profiel in één keer in (±100x de
+        // bestandsgrootte aan RAM), dus een uitschieter — meestal een 500 met een
+        // volledige exception-dump — zou het proces met een OOM omleggen.
+        ->set('skrepr_runtime_mate.max_profile_bytes', ProfileReader::DEFAULT_MAX_PROFILE_BYTES)
     ;
 
     $services = $container->services();
@@ -38,7 +43,7 @@ return static function (ContainerConfigurator $container): void {
     ;
 
     $services->set(ProfileReader::class)
-        ->args(['%skrepr_runtime_mate.profiler_dir%'])
+        ->args(['%skrepr_runtime_mate.profiler_dir%', '%skrepr_runtime_mate.max_profile_bytes%'])
     ;
 
     foreach ([SlowQueriesTool::class, NPlusOneTool::class, ProfileDiffTool::class, RequestBreakdownTool::class] as $tool) {

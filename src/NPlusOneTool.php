@@ -35,7 +35,11 @@ final class NPlusOneTool
         if (null === $token) {
             return $this->json(['error' => 'Geen requests gevonden — doe eerst een request naar de app.']);
         }
-        $profile = $this->reader->read($token);
+        try {
+            $profile = $this->reader->read($token);
+        } catch (ProfileTooLargeException $e) {
+            return $this->json(['error' => $e->getMessage()]);
+        }
         if (null === $profile) {
             return $this->json(['error' => "Geen profiel gevonden voor token {$token}."]);
         }
