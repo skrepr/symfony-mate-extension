@@ -10,12 +10,12 @@ declare(strict_types=1);
  * $container->has(FQCN), en privé services zijn daar onzichtbaar.
  */
 
-use Skrepr\SymfonyRuntimeMate\ExplainTool;
-use Skrepr\SymfonyRuntimeMate\NPlusOneTool;
-use Skrepr\SymfonyRuntimeMate\ProfileDiffTool;
-use Skrepr\SymfonyRuntimeMate\ProfileReader;
-use Skrepr\SymfonyRuntimeMate\RequestBreakdownTool;
-use Skrepr\SymfonyRuntimeMate\SlowQueriesTool;
+use Skrepr\SymfonyMate\ExplainTool;
+use Skrepr\SymfonyMate\NPlusOneTool;
+use Skrepr\SymfonyMate\ProfileDiffTool;
+use Skrepr\SymfonyMate\ProfileReader;
+use Skrepr\SymfonyMate\RequestBreakdownTool;
+use Skrepr\SymfonyMate\SlowQueriesTool;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyRuntimeMate;
+namespace Skrepr\SymfonyMate;
 
 use Mcp\Capability\Attribute\McpTool;
 
