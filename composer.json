@@ -1,0 +1,50 @@
+{
+    "name": "skrepr/symfony-runtime-mate-extension",
+    "description": "AI Mate extension: exposes Symfony profiler runtime data (slow queries, N+1 detection, EXPLAIN, request breakdown, profile diff) to AI agents. Dev-only.",
+    "license": "MIT",
+    "type": "symfony-ai-mate",
+    "keywords": ["ai", "mcp", "mate", "profiler", "symfony", "doctrine", "performance", "dev"],
+    "authors": [
+        {
+            "name": "Jacob",
+            "email": "jacob@skrepr.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "symfony/ai-mate": "^0.10",
+        "symfony/dependency-injection": "^6.4|^7.0|^8.0",
+        "symfony/http-kernel": "^6.4|^7.0|^8.0",
+        "symfony/stopwatch": "^6.4|^7.0|^8.0",
+        "symfony/var-dumper": "^6.4|^7.0|^8.0",
+        "symfony/doctrine-bridge": "^6.4|^7.0|^8.0",
+        "doctrine/dbal": "^3.2|^4.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "symfony/web-profiler-bundle": "^6.4|^7.0|^8.0"
+    },
+    "suggest": {
+        "symfony/web-profiler-bundle": "Required to produce the profiler data these tools read",
+        "symfony/ai-symfony-mate-extension": "Official Symfony bridge — complements this package with raw profiler/container access tools"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Skrepr\\SymfonyRuntimeMate\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "ai-mate": {
+            "extension": true,
+            "scan-dirs": ["src"],
+            "includes": ["config/services.php"],
+            "instructions": "INSTRUCTIONS.md"
+        }
+    }
+}
