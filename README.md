@@ -22,10 +22,18 @@ Complementair aan de officiële `symfony/ai-symfony-mate-extension` (die ruwe pr
 
 ```bash
 composer require --dev skrepr/symfony-mate-extension
-vendor/bin/mate discover      # registreert de extensie
 ```
 
-De vier profiler-tools werken meteen: ze lezen `var/cache/dev/profiler`. Doe een paar requests naar je app en roep bijvoorbeeld `request_breakdown` aan.
+**Draait AI Mate al in je project** (er bestaat een `mate/`-map)? Dan ben je klaar: de Mate-composer-plugin draait `mate discover` automatisch na elke `composer require`/`update`.
+
+**Nog geen AI Mate?** Het pakket trekt `symfony/ai-mate` automatisch mee; initialiseer het eenmalig:
+
+```bash
+vendor/bin/mate init          # maakt mate/ + mcp.json (Claude Code e.d. pikken die vanzelf op)
+vendor/bin/mate discover      # registreert de extensie; daarna gebeurt dit automatisch
+```
+
+De vier profiler-tools werken meteen: ze lezen `var/cache/dev/profiler`. Doe een paar requests naar je app en roep bijvoorbeeld `request_breakdown` aan. Check met `vendor/bin/mate mcp:tools:list` of de tools geregistreerd zijn.
 
 ## Configuratie
 
@@ -44,12 +52,14 @@ return static function (ContainerConfigurator $container): void {
 };
 ```
 
+`mate.env_file` verwacht een **string** (géén array) en vereist `symfony/dotenv` in je project — in een standaard Symfony-app al aanwezig.
+
 Gebruik je een andere env-var of meerdere connecties, wijs de DSN dan expliciet aan:
 
 ```php
 $container->parameters()
     ->set('mate.env_file', '.env')
-    ->set('skrepr_runtime_mate.database_url', '%env(resolve:POSTCODE_DB_URL)%')
+    ->set('skrepr_mate.database_url', '%env(resolve:POSTCODE_DB_URL)%')
 ;
 ```
 
@@ -69,7 +79,7 @@ Daarmee wijst `origin` naar het exacte bestand:regel in je projectcode, inclusie
 
 ```php
 $container->parameters()
-    ->set('skrepr_runtime_mate.profiler_dir', '%mate.root_dir%/var/cache/dev/profiler')
+    ->set('skrepr_mate.profiler_dir', '%mate.root_dir%/var/cache/dev/profiler')
 ;
 ```
 

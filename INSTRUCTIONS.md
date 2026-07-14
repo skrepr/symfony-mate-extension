@@ -12,4 +12,5 @@ Typical performance workflow:
 
 Notes:
 - `origin` / `origin_context` require `doctrine.dbal.profiling_collect_backtrace: true` in the app's dev config; without it they degrade to "unknown".
-- `explain_query` needs a database DSN (see the extension README). `analyze=true` only runs for `SELECT`/`WITH`.
+- `explain_query` needs a database DSN (see the extension README). `analyze=true` only runs for `SELECT`/`WITH`, and exactly one statement is accepted.
+- `sample_sql` in `detect_n_plus_one` contains the actual literal values from the request — treat it as potentially sensitive; the normalized `sql_shape` fields do not.
