@@ -1,4 +1,4 @@
-# skrepr/symfony-mate-extension
+# skrepr/ai-performance-mate-extension
 
 Een [AI Mate](https://symfony.com/doc/current/ai/components/mate.html)-extensie die **runtime-data uit de Symfony profiler** beschikbaar maakt voor AI-agents (Claude Code, Cursor, …). Waar code-intelligence kijkt naar wat er op disk staat, kijkt deze naar wat er *daadwerkelijk gebeurt*: request-timing, Doctrine-queries, N+1-patronen en query-plannen.
 
@@ -21,7 +21,7 @@ Complementair aan de officiële `symfony/ai-symfony-mate-extension` (die ruwe pr
 ## Installatie
 
 ```bash
-composer require --dev skrepr/symfony-mate-extension
+composer require --dev skrepr/ai-performance-mate-extension
 ```
 
 **Draait AI Mate al in je project** (er bestaat een `mate/`-map)? Dan ben je klaar: de Mate-composer-plugin draait `mate discover` automatisch na elke `composer require`/`update`.

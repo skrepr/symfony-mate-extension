@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate\Tests;
+namespace Skrepr\PerformanceMate\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Skrepr\SymfonyMate\Sql;
+use Skrepr\PerformanceMate\Sql;
 
 final class SqlTest extends TestCase
 {

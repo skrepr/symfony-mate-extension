@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate\Tests;
+namespace Skrepr\PerformanceMate\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Skrepr\SymfonyMate\JsonResponse;
+use Skrepr\PerformanceMate\JsonResponse;
 
 final class JsonResponseTest extends TestCase
 {

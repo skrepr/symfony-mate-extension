@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate;
+namespace Skrepr\PerformanceMate;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;

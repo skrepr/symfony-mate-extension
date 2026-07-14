@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate;
+namespace Skrepr\PerformanceMate;
 
 use Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector;
 use Symfony\Component\HttpKernel\DataCollector\MemoryDataCollector;

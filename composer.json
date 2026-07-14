@@ -1,5 +1,5 @@
 {
-    "name": "skrepr/symfony-mate-extension",
+    "name": "skrepr/ai-performance-mate-extension",
     "description": "AI Mate extension: exposes Symfony profiler runtime data (slow queries, N+1 detection, EXPLAIN, request breakdown, profile diff) to AI agents. Dev-only.",
     "license": "MIT",
     "type": "library",
@@ -34,12 +34,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Skrepr\\SymfonyMate\\": "src/"
+            "Skrepr\\PerformanceMate\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Skrepr\\SymfonyMate\\Tests\\": "tests/"
+            "Skrepr\\PerformanceMate\\Tests\\": "tests/"
         }
     },
     "scripts": {

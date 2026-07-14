@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate\Tests;
+namespace Skrepr\PerformanceMate\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Skrepr\SymfonyMate\QueryShapes;
+use Skrepr\PerformanceMate\QueryShapes;
 
 final class QueryShapesTest extends TestCase
 {

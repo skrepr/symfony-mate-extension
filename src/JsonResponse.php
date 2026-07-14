@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate;
+namespace Skrepr\PerformanceMate;
 
 trait JsonResponse
 {

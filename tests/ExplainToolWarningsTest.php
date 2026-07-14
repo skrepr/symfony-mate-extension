@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate\Tests;
+namespace Skrepr\PerformanceMate\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Skrepr\SymfonyMate\ExplainTool;
+use Skrepr\PerformanceMate\ExplainTool;
 
 final class ExplainToolWarningsTest extends TestCase
 {

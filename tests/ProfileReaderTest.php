@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Skrepr\SymfonyMate\Tests;
+namespace Skrepr\PerformanceMate\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Skrepr\SymfonyMate\ProfileReader;
-use Skrepr\SymfonyMate\ProfileTooLargeException;
+use Skrepr\PerformanceMate\ProfileReader;
+use Skrepr\PerformanceMate\ProfileTooLargeException;
 use Symfony\Component\HttpKernel\Profiler\FileProfilerStorage;
 use Symfony\Component\HttpKernel\Profiler\Profile;
 
